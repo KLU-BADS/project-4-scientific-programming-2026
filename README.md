@@ -9,7 +9,7 @@
 ## Overview
 
 <!-- DESCRIBE PROJECT PURPOSE BELOW -->
-A minimal Julia package helping you to start your project. 
+To forecast Spain's future solar energy output using Julia, based on real historical data (capturing panel growth) adjusted for efficiency losses under different climate change warming scenarios.
 <!-- DESCRIBE PROJECT PURPOSE ABOVE  -->
 
 ## Getting started
