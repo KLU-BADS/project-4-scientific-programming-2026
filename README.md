@@ -1,4 +1,4 @@
-# Project4.jl
+# SolarCastSpain.jl
 
 <!-- DO NOT EDIT BELOW -->
 [![Tests](../../actions/workflows/tests.yml/badge.svg)](../../actions/workflows/tests.yml)
