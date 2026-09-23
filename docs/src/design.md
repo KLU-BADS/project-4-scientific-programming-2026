@@ -173,28 +173,3 @@ The project will use Julia for data processing, modelling, forecasting, and visu
 The implementation will focus on keeping the model simple and understandable. Each major step will be separated so that the data processing, model, forecasting, and validation can be tested independently.
 
 This structure also makes it possible to change one part of the project, such as the temperature effect or forecasting method, without having to rewrite the entire project.
-
-## Components
-
-This package has one component named `hello` which provides a function `hello()`.
-
-```plantuml
-@startuml
-package "Project" {
-  [hello]
-}
-@enduml
-```
-
-
-## Behaviour
-
-The `hello()` function prints "Hello World".
-
-```plantuml
-@startuml
-left to right direction
-(*) --> "print"
-"print" --> (*)
-@enduml
-```
