@@ -1,29 +1,31 @@
 using Statistics, DataFrames
 include("data.jl")
 
-# Drop any rows where solar_gwh, year, or month are missing
+# Load data and remove any rows with missing values in our key columns
 data = dropmissing(load_data(), [:solar_gwh, :year, :month, :avg_temperature_c, :sunlight_hours])
 
-# Center time relative to 2021
+# Convert calendar year and month into a single continuous time variable
+# Example: January 2021 = 0.0, February 2021 = 0.083, January 2022 = 1.0
 data.time = (data.year .- 2021) .+ (data.month .- 1) ./ 12
 
 # -----------------------------------------------------------------------------
 # 1. Linear Trend Estimation (Ordinary Least Squares)
 # -----------------------------------------------------------------------------
+# Finds the overall growth line of solar energy over time (slope and intercept)
 
 function estimate_trend(data)
     x = data.time
     y = data.solar_gwh
 
-    # Calculate sample means
+    # Compute average time and average solar production
     x_mean = mean(x)
     y_mean = mean(y)
 
-    # Slope formula: Covariance(x, y) / Variance(x)
+    # Standard formula for regression slope: Covariance(x, y) / Variance(x)
     slope = sum((x .- x_mean) .* (y .- y_mean)) /
             sum((x .- x_mean).^2)
 
-    # Intercept formula: Ensures regression line passes through point (x_mean, y_mean)
+    # Calculate intercept so the trend line passes through (x_mean, y_mean)
     intercept = y_mean - slope * x_mean
 
     return (
@@ -37,6 +39,7 @@ trend = estimate_trend(data)
 # -----------------------------------------------------------------------------
 # 2. Multiplicative Seasonality Estimation
 # -----------------------------------------------------------------------------
+# Calculates how much solar production goes above or below average in each month
 
 function estimate_seasonality(data, trend)
     # Compute predicted baseline trend values for each point in time
@@ -56,7 +59,7 @@ function estimate_seasonality(data, trend)
         :ratio => mean => :seasonal_factor
     )
 
-    # Rescale seasonal factors so their mean across all 12 months is exactly 1.0
+    # Normalize factors so the average across all 12 months equals 1.0
     seasonal_df.seasonal_factor ./= mean(seasonal_df.seasonal_factor)
 
     return seasonal_df
@@ -67,6 +70,7 @@ seasonality = estimate_seasonality(data, trend)
 # -----------------------------------------------------------------------------
 # 3. Temperature Efficiency Factor Estimation
 # -----------------------------------------------------------------------------
+# Models efficiency loss when panels get hot in warm months
 
 function estimate_temperature_efficiency(data; ref_temp=20.0, temp_coef=-0.004)
     # Calculate degrees above reference temperature (e.g., 20°C baseline)
@@ -87,21 +91,11 @@ end
 
 temp_efficiency = estimate_temperature_efficiency(data)
 
-#= 
+# -----------------------------------------------------------------------------
+# 4. Model Prediction Function
+# -----------------------------------------------------------------------------
+# Combines all three parts into one single forecast function for other files to use
 
-function build_model(data)
-    trend = estimate_trend(data)
-    seasonal = estimate_seasonality(data)
-    temperature_effect = estimate_temperature_effect(data)
-
-    return SolarModel(
-        trend,
-        seasonal,
-        temperature_effect
-    )
-end
-
-=#
 
 
 
