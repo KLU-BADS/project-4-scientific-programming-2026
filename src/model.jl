@@ -111,7 +111,6 @@ function predict_solar(time, month, temp_c, trend, seasonality_df; ref_temp=20.0
     return trend_val * s_factor * eff_factor
 end
 
-
 # =============================================================================
 # PRINT OUTPUTS (To confirm model execution)
 # =============================================================================
