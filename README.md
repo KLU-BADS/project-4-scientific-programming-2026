@@ -26,13 +26,13 @@ julia --project=.
 
 
 <!-- DESCRIBE THE ESSENTIAL USAGE BELOW -->
-Once the package is cloned you can run:
+Once the package is cloned you can validate a forecast against the last 12 months of data:
 
 ```julia
 using Project4
-hello()
+data = (month = ..., solar_gwh = ...)          # monthly data, oldest first
+validate(seasonal_naive(), data).metrics       # (mae, rmse, mape, bias)
 ```
-to print "Hello World" to standard output.
 <!-- DESCRIBE THE ESSENTIAL USAGE ABOVE -->
 
 ## Tests
