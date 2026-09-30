@@ -41,14 +41,19 @@ trend = estimate_trend(data)
 # -----------------------------------------------------------------------------
 # Calculates how much solar production goes above or below average in each month
 
-function estimate_seasonality(data, trend)
+function estimate_seasonality(data, trend; ref_temp=20.0, temp_coef=-0.004)
+    
     # Compute predicted baseline trend values for each point in time
     trend_vals = trend.intercept .+ trend.slope .* data.time
 
     # Compute multiplicative seasonal ratios (Actual / Trend)
+    # Temperature efficiency for each month, so it is not absorbed into the seasonal factor
+    eff_vals = 1.0 .+ temp_coef .* max.(0.0, data.avg_temperature_c .- ref_temp)
+
+    # Compute multiplicative seasonal ratios (Actual / (Trend * Efficiency))
     # Ratio > 1.0 indicates above-average seasonal generation (e.g., Summer)
     # Ratio < 1.0 indicates below-average seasonal generation (e.g., Winter)
-    seasonal_ratios = data.solar_gwh ./ trend_vals
+    seasonal_ratios = data.solar_gwh ./ (trend_vals .* eff_vals)
 
     # Map seasonal ratios back to their respective calendar months
     temp_df = DataFrame(month = data.month, ratio = seasonal_ratios)
@@ -97,6 +102,54 @@ temp_efficiency = estimate_temperature_efficiency(data)
 # Combines all three parts into one single forecast function for other files to use
 
 function predict_solar(time, month, temp_c, trend, seasonality_df; ref_temp=20.0, temp_coef=-0.004)
+    # Base trend value
+    trend_val = trend.intercept + trend.slope * time
+    
+    # Monthly seasonal factor
+    s_factor = seasonality_df[seasonality_df.month .== month, :seasonal_factor][1]
+    
+    # Temperature efficiency factor
+    temp_above_ref = max(0.0, temp_c - ref_temp)
+    eff_factor = 1.0 + (temp_coef * temp_above_ref)
+    
+    # Combined Multiplicative Model
+    return trend_val * s_factor * eff_factor
+end
+
+
+# =============================================================================
+# PRINT OUTPUTS (To confirm model execution)
+# =============================================================================
+
+#=
+println("="^50)
+println("1. LINEAR TREND ESTIMATION")
+println("="^50)
+println("Slope (Growth per year): ", round(trend.slope, digits=2), " GWh/year")
+println("Intercept (Base 2021)  : ", round(trend.intercept, digits=2), " GWh")
+
+println("\n" * "="^50)
+println("2. SEASONALITY FACTORS (First 6 Months)")
+println("="^50)
+println(first(seasonality, 6))
+
+println("\n" * "="^50)
+println("3. TEMPERATURE EFFICIENCY (Sample Rows)")
+println("="^50)
+# Showing summer months where temperature effect kicks in
+summer_sample = filter(row -> row.month in [1, 7, 8], temp_efficiency)
+println(first(summer_sample, 6))
+
+println("\n" * "="^50)
+println("4. SAMPLE PREDICTIONS VS ACTUAL DATA")
+println("="^50)
+
+# Test predict_solar function on January 2021 (Row 1)
+sample_time  = data.time[1]
+sample_month = data.month[1]
+sample_temp  = data.avg_temperature_c[1]
+actual_gwh   = data.solar_gwh[1]
+
     # Long-term trend value
     trend_val = trend.intercept + trend.slope * time
     
