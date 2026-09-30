@@ -1,16 +1,15 @@
-using Statistics
+using Statistics, DataFrames
 include("data.jl")
 
-data = load_data()
+# Drop any rows where solar_gwh, year, or month are missing
+data = dropmissing(load_data(), [:solar_gwh, :year, :month])
 
 # Center time relative to 2021
 data.time = (data.year .- 2021) .+ (data.month .- 1) ./ 12
 
 function estimate_trend(data)
-    # Collect only complete pairs without any missing values
-    valid_idx = .!ismissing.(data.time) .& .!ismissing.(data.solar_gwh)
-    x = data.time[valid_idx]
-    y = data.solar_gwh[valid_idx]
+    x = data.time
+    y = data.solar_gwh
 
     x_mean = mean(x)
     y_mean = mean(y)
