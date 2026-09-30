@@ -150,6 +150,52 @@ sample_month = data.month[1]
 sample_temp  = data.avg_temperature_c[1]
 actual_gwh   = data.solar_gwh[1]
 
+    # Long-term trend value
+    trend_val = trend.intercept + trend.slope * time
+    
+    # Get seasonal multiplier for this specific month
+    s_factor = seasonality_df[seasonality_df.month .== month, :seasonal_factor][1]
+    
+    # Get temperature efficiency factor
+    temp_above_ref = max(0.0, temp_c - ref_temp)
+    eff_factor = 1.0 + (temp_coef * temp_above_ref)
+    
+    # Multiply all components together
+    return trend_val * s_factor * eff_factor
+end
+
+# =============================================================================
+# PRINT OUTPUTS (To confirm model execution) 
+# =============================================================================
+
+#= println("="^50)
+println("1. LINEAR TREND ESTIMATION")
+println("="^50)
+println("Slope (Growth per year): ", round(trend.slope, digits=2), " GWh/year")
+println("Intercept (Base 2021)  : ", round(trend.intercept, digits=2), " GWh")
+
+println("\n" * "="^50)
+println("2. SEASONALITY FACTORS (First 6 Months)")
+println("="^50)
+println(first(seasonality, 6))
+
+println("\n" * "="^50)
+println("3. TEMPERATURE EFFICIENCY (Sample Rows)")
+println("="^50)
+# Showing summer months where temperature effect kicks in
+summer_sample = filter(row -> row.month in [1, 7, 8], temp_efficiency)
+println(first(summer_sample, 6))
+
+println("\n" * "="^50)
+println("4. SAMPLE PREDICTIONS VS ACTUAL DATA")
+println("="^50)
+
+# Test predict_solar function on January 2021 (Row 1)
+sample_time  = data.time[1]
+sample_month = data.month[1]
+sample_temp  = data.avg_temperature_c[1]
+actual_gwh   = data.solar_gwh[1]
+
 predicted_gwh = predict_solar(sample_time, sample_month, sample_temp, trend, seasonality)
 
 println("Test Date   : Jan 2021 (Year 2021, Month 1)")
