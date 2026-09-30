@@ -41,14 +41,19 @@ trend = estimate_trend(data)
 # -----------------------------------------------------------------------------
 # Calculates how much solar production goes above or below average in each month
 
-function estimate_seasonality(data, trend)
+function estimate_seasonality(data, trend; ref_temp=20.0, temp_coef=-0.004)
+    
     # Compute predicted baseline trend values for each point in time
     trend_vals = trend.intercept .+ trend.slope .* data.time
 
     # Compute multiplicative seasonal ratios (Actual / Trend)
+    # Temperature efficiency for each month, so it is not absorbed into the seasonal factor
+    eff_vals = 1.0 .+ temp_coef .* max.(0.0, data.avg_temperature_c .- ref_temp)
+
+    # Compute multiplicative seasonal ratios (Actual / (Trend * Efficiency))
     # Ratio > 1.0 indicates above-average seasonal generation (e.g., Summer)
     # Ratio < 1.0 indicates below-average seasonal generation (e.g., Winter)
-    seasonal_ratios = data.solar_gwh ./ trend_vals
+    seasonal_ratios = data.solar_gwh ./ (trend_vals .* eff_vals)
 
     # Map seasonal ratios back to their respective calendar months
     temp_df = DataFrame(month = data.month, ratio = seasonal_ratios)
@@ -110,6 +115,7 @@ function predict_solar(time, month, temp_c, trend, seasonality_df; ref_temp=20.0
     # Combined Multiplicative Model
     return trend_val * s_factor * eff_factor
 end
+
 
 # =============================================================================
 # PRINT OUTPUTS (To confirm model execution)
