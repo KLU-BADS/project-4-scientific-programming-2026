@@ -9,7 +9,7 @@
 ## Overview
 
 <!-- DESCRIBE PROJECT PURPOSE BELOW -->
-To forecast Spain's future solar energy output using Julia, based on real historical data (capturing panel growth) adjusted for efficiency losses under different climate change warming scenarios.
+forecasts Spain's future monthly solar energy production using historical data from sources like ENTSO-E/REE and AEMET. The project models long-term solar panel capacity growth alongside seasonal patterns and efficiency losses caused by rising temperatures under various future warming scenarios.
 <!-- DESCRIBE PROJECT PURPOSE ABOVE  -->
 
 ## Getting started
