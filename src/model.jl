@@ -8,6 +8,12 @@ data = dropmissing(load_data(), [:solar_gwh, :year, :month, :avg_temperature_c, 
 # Example: January 2021 = 0.0, February 2021 = 0.083, January 2022 = 1.0
 data.time = (data.year .- 2021) .+ (data.month .- 1) ./ 12
 
+# Temperature effect
+const REF_TEMP = 25.0
+const TEMP_COEF = -0.004
+
+temperature_efficiency(temp_c) = 1.0 + TEMP_COEF * max(0.0, temp_c - REF_TEMP)
+
 # -----------------------------------------------------------------------------
 # 1. Linear Trend Estimation (Ordinary Least Squares)
 # -----------------------------------------------------------------------------
@@ -41,14 +47,13 @@ trend = estimate_trend(data)
 # -----------------------------------------------------------------------------
 # Calculates how much solar production goes above or below average in each month
 
-function estimate_seasonality(data, trend; ref_temp=20.0, temp_coef=-0.004)
-    
+function estimate_seasonality(data, trend)
     # Compute predicted baseline trend values for each point in time
     trend_vals = trend.intercept .+ trend.slope .* data.time
 
     # Compute multiplicative seasonal ratios (Actual / Trend)
     # Temperature efficiency for each month, so it is not absorbed into the seasonal factor
-    eff_vals = 1.0 .+ temp_coef .* max.(0.0, data.avg_temperature_c .- ref_temp)
+    eff_vals = temperature_efficiency.(data.avg_temperature_c)
 
     # Compute multiplicative seasonal ratios (Actual / (Trend * Efficiency))
     # Ratio > 1.0 indicates above-average seasonal generation (e.g., Summer)
@@ -77,14 +82,9 @@ seasonality = estimate_seasonality(data, trend)
 # -----------------------------------------------------------------------------
 # Models efficiency loss when panels get hot in warm months
 
-function estimate_temperature_efficiency(data; ref_temp=20.0, temp_coef=-0.004)
-    # Calculate degrees above reference temperature (e.g., 20°C baseline)
-    # Temperatures below ref_temp do not reduce efficiency
-    temp_above_ref = max.(0.0, data.avg_temperature_c .- ref_temp)
-
-    # Efficiency factor: 1.0 at or below ref_temp, decreasing as temperature rises
-    # Default coefficient -0.004 represents a 0.4% efficiency drop per °C
-    efficiency_factor = 1.0 .+ (temp_coef .* temp_above_ref)
+function estimate_temperature_efficiency(data)
+    # Efficiency factor per month (1.0 at or below REF_TEMP, lower when hotter)
+    efficiency_factor = temperature_efficiency.(data.avg_temperature_c)
 
     return DataFrame(
         year = data.year,
@@ -101,7 +101,7 @@ temp_efficiency = estimate_temperature_efficiency(data)
 # -----------------------------------------------------------------------------
 # Combines all three parts into one single forecast function for other files to use
 
-function predict_solar(time, month, temp_c, trend, seasonality_df; ref_temp=20.0, temp_coef=-0.004)
+function predict_solar(time, month, temp_c, trend, seasonality_df)
     # Base trend value
     trend_val = trend.intercept + trend.slope * time
     
@@ -109,8 +109,7 @@ function predict_solar(time, month, temp_c, trend, seasonality_df; ref_temp=20.0
     s_factor = seasonality_df[seasonality_df.month .== month, :seasonal_factor][1]
     
     # Temperature efficiency factor
-    temp_above_ref = max(0.0, temp_c - ref_temp)
-    eff_factor = 1.0 + (temp_coef * temp_above_ref)
+    eff_factor = temperature_efficiency(temp_c)
     
     # Combined Multiplicative Model
     return trend_val * s_factor * eff_factor
@@ -121,7 +120,6 @@ end
 # PRINT OUTPUTS (To confirm model execution)
 # =============================================================================
 
-#=
 println("="^50)
 println("1. LINEAR TREND ESTIMATION")
 println("="^50)
@@ -157,4 +155,3 @@ println("Actual GWh  : ", round(actual_gwh, digits=2))
 println("Predicted   : ", round(predicted_gwh, digits=2))
 println("="^50)
 
-=# 
