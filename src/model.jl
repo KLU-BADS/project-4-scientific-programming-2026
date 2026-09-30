@@ -2,7 +2,7 @@ using Statistics, DataFrames
 include("data.jl")
 
 # Drop any rows where solar_gwh, year, or month are missing
-data = dropmissing(load_data(), [:solar_gwh, :year, :month])
+data = dropmissing(load_data(), [:solar_gwh, :year, :month, :avg_temperature_c, :sunlight_hours])
 
 # Center time relative to 2021
 data.time = (data.year .- 2021) .+ (data.month .- 1) ./ 12
@@ -19,7 +19,7 @@ function estimate_trend(data)
     x_mean = mean(x)
     y_mean = mean(y)
 
-    # OLS Slope formula: Covariance(x, y) / Variance(x)
+    # Slope formula: Covariance(x, y) / Variance(x)
     slope = sum((x .- x_mean) .* (y .- y_mean)) /
             sum((x .- x_mean).^2)
 
@@ -64,10 +64,30 @@ end
 
 seasonality = estimate_seasonality(data, trend)
 
-#= 
-function estimate_temperature_effect(data)
-    # TODO
+# -----------------------------------------------------------------------------
+# 3. Temperature Efficiency Factor Estimation
+# -----------------------------------------------------------------------------
+
+function estimate_temperature_efficiency(data; ref_temp=20.0, temp_coef=-0.004)
+    # Calculate degrees above reference temperature (e.g., 20°C baseline)
+    # Temperatures below ref_temp do not reduce efficiency
+    temp_above_ref = max.(0.0, data.avg_temperature_c .- ref_temp)
+
+    # Efficiency factor: 1.0 at or below ref_temp, decreasing as temperature rises
+    # Default coefficient -0.004 represents a 0.4% efficiency drop per °C
+    efficiency_factor = 1.0 .+ (temp_coef .* temp_above_ref)
+
+    return DataFrame(
+        year = data.year,
+        month = data.month,
+        avg_temp = data.avg_temperature_c,
+        efficiency_factor = efficiency_factor
+    )
 end
+
+temp_efficiency = estimate_temperature_efficiency(data)
+
+#= 
 
 function build_model(data)
     trend = estimate_trend(data)
