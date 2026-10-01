@@ -188,5 +188,35 @@ using Test
             nothing
         )
     end
+    @testset "forecast output" begin
+        years = [2026, 2026, 2026]
+        months = [9, 10, 11]
+        temperatures = [20.8, 17.8, 11.6]
+        forecasts = [5808.0, 4530.0, 3481.0]
+
+        output = create_forecast_output(
+            years,
+            months,
+            temperatures,
+            forecasts;
+            scenario = "+1C"
+        )
+
+        @test size(output, 1) == 3
+
+        @test output.year == years
+        @test output.month == months
+        @test output.temperature_c == temperatures
+        @test output.forecast_solar_gwh == forecasts
+
+        @test output.scenario == ["+1C", "+1C", "+1C"]
+
+        @test_throws DimensionMismatch create_forecast_output(
+            [2026],
+            [9, 10],
+            [20.8, 17.8],
+            [5808.0, 4530.0]
+        )
+    end
 
 end
