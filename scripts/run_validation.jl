@@ -2,57 +2,25 @@
 #
 # Usage, from the repository folder:
 #
-#     julia --project=. scripts/run_validation.jl                   # finds data/data_solar.csv
-#     julia --project=. scripts/run_validation.jl path/to/file.csv
+#     julia --project=. scripts/run_validation.jl
 #
-# The CSV needs a header row and the columns year, month and solar_gwh.
-# No extra packages are needed.
+# Loads the data and the team model exactly as src/model.jl does, so it needs
+# the CSV and DataFrames packages once, in your default Julia environment:
+#
+#     julia -e 'using Pkg; Pkg.add(["CSV", "DataFrames"])'
 
 using Project4
 using Printf
 
 # ---------------------------------------------------------------------------
-# Load the data
+# Load the data and the team model
 # ---------------------------------------------------------------------------
 
-function find_dataset()
-    isempty(ARGS) || return ARGS[1]
-    here = dirname(@__DIR__)                      # repository folder
-    for path in (joinpath(here, "data", "data_solar.csv"),
-                 joinpath(here, "data_solar.csv"))
-        isfile(path) && return path
-    end
-    error("data/data_solar.csv not found; pass the CSV path as an argument")
-end
+cd(dirname(@__DIR__))                            # repository folder: data.csv lives here
+include(joinpath("..", "src", "model.jl"))       # defines `data` (with `time`), estimate_trend, ...
+include(joinpath("..", "src", "train_test.jl"))  # train_model, predict_model, forecast_model, ...
 
-"""
-Read a comma-separated file into a NamedTuple of columns, sorted by year and
-month. Columns that are all numbers become Float64, others stay text. Blank
-rows (e.g. `,,,,,` left over from Excel) and stray spaces are ignored.
-"""
-function load_dataset(path)
-    lines = readlines(path)
-    lines = [lstrip(l, '\ufeff') for l in lines]             # Excel's UTF-8 marker
-    lines = filter(l -> !isempty(strip(replace(l, "," => ""))), lines)
-
-    names = Symbol.(strip.(split(lines[1], ",")))
-    rows  = [strip.(split(l, ",")) for l in lines[2:end]]
-    all(r -> length(r) == length(names), rows) ||
-        error("every row must have $(length(names)) columns")
-
-    columns = map(eachindex(names)) do j
-        raw  = [r[j] for r in rows]
-        nums = tryparse.(Float64, raw)
-        any(isnothing, nums) ? String.(raw) : Float64.(nums)
-    end
-    data = NamedTuple{Tuple(names)}(Tuple(columns))
-
-    order = sortperm(collect(zip(data.year, data.month)))
-    return map(col -> col[order], data)
-end
-
-path = find_dataset()
-data = load_dataset(path)
+path = "data.csv"
 n = length(data.solar_gwh)
 
 label(i) = @sprintf("%04d-%02d", Int(data.year[i]), Int(data.month[i]))
@@ -62,13 +30,14 @@ println("Dataset: ", path)
 println("Rows:    ", n, " months, ", label(1), " to ", label(n))
 
 # ---------------------------------------------------------------------------
-# Forecasters to compare. Add the team's model here once it exists:
-#     "model" => my_forecaster,
+# Forecasters to compare: the team model against the two baselines.
 # ---------------------------------------------------------------------------
 
 forecasters = (
-    "seasonal naive"          => seasonal_naive(:solar_gwh),
-    "seasonal naive + growth" => seasonal_naive_growth(:solar_gwh),
+    "team model (full)"           => forecast_model,
+    "trend x season (no temp)"    => forecast_model_no_temperature,
+    "seasonal naive"              => seasonal_naive(:solar_gwh),
+    "seasonal naive + growth"     => seasonal_naive_growth(:solar_gwh),
 )
 
 # ---------------------------------------------------------------------------
@@ -84,9 +53,9 @@ println("Test:    ", label(first(hold.test)), " to ", label(last(hold.test)),
 function print_metrics_table(title, rows)
     println()
     println(title)
-    @printf("  %-26s %10s %10s %8s %10s\n", "forecaster", "MAE", "RMSE", "MAPE", "bias")
+    @printf("  %-29s %10s %10s %8s %10s\n", "forecaster", "MAE", "RMSE", "MAPE", "bias")
     for r in rows
-        @printf("  %-26s %10.1f %10.1f %7.1f%% %+10.1f\n", r.name, r.mae, r.rmse, r.mape, r.bias)
+        @printf("  %-29s %10.1f %10.1f %7.1f%% %+10.1f\n", r.name, r.mae, r.rmse, r.mape, r.bias)
     end
 end
 

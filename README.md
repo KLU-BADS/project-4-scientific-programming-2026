@@ -9,7 +9,7 @@
 ## Overview
 
 <!-- DESCRIBE PROJECT PURPOSE BELOW -->
-To forecast Spain's future solar energy output using Julia, based on real historical data (capturing panel growth) adjusted for efficiency losses under different climate change warming scenarios.
+forecasts Spain's future monthly solar energy production using historical data from sources like ENTSO-E/REE and AEMET. The project models long-term solar panel capacity growth alongside seasonal patterns and efficiency losses caused by rising temperatures under various future warming scenarios.
 <!-- DESCRIBE PROJECT PURPOSE ABOVE  -->
 
 ## Getting started
@@ -26,12 +26,25 @@ julia --project=.
 
 
 <!-- DESCRIBE THE ESSENTIAL USAGE BELOW -->
-Once the package is cloned you can validate a forecast against the last 12 months of data:
+To validate the forecast model on `data.csv`, run from the project folder
+(the first line is needed only once):
+
+```bash
+julia -e 'using Pkg; Pkg.add(["CSV", "DataFrames"])'
+julia --project=. scripts/run_validation.jl
+```
+
+This fits the model (`src/model.jl`) on the training months only, forecasts the
+last 12 months, and compares it with two simple baselines (seasonal naive, with
+and without growth). It prints MAE, RMSE, MAPE and bias for a hold-out test and
+a rolling backtest.
+
+The validation functions can also be used directly on any table with `month`
+and `solar_gwh` columns, ordered by time:
 
 ```julia
 using Project4
-data = (month = ..., solar_gwh = ...)          # monthly data, oldest first
-validate(seasonal_naive(), data).metrics       # (mae, rmse, mape, bias)
+validate(seasonal_naive(), data).metrics   # (mae, rmse, mape, bias)
 ```
 <!-- DESCRIBE THE ESSENTIAL USAGE ABOVE -->
 
