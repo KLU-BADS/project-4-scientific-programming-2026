@@ -1,14 +1,16 @@
 """
     Project4
 
-A minimal Julia package to start a project from.
+Forecast Spain's monthly solar energy production (SolarCastSpain).
 """
 module Project4
 
 # Files to be included
-include("hello.jl")
+include("validation.jl")
 
 # Functions to be exported
-export hello
+export holdout_split, mae, rmse, mape, bias, evaluate
+export seasonal_naive, seasonal_naive_growth
+export validate, backtest, compare_forecasters
 
 end # module Project4

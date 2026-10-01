@@ -26,13 +26,26 @@ julia --project=.
 
 
 <!-- DESCRIBE THE ESSENTIAL USAGE BELOW -->
-Once the package is cloned you can run:
+To validate the forecast model on `data.csv`, run from the project folder
+(the first line is needed only once):
+
+```bash
+julia -e 'using Pkg; Pkg.add(["CSV", "DataFrames"])'
+julia --project=. scripts/run_validation.jl
+```
+
+This fits the model (`src/model.jl`) on the training months only, forecasts the
+last 12 months, and compares it with two simple baselines (seasonal naive, with
+and without growth). It prints MAE, RMSE, MAPE and bias for a hold-out test and
+a rolling backtest.
+
+The validation functions can also be used directly on any table with `month`
+and `solar_gwh` columns, ordered by time:
 
 ```julia
 using Project4
-hello()
+validate(seasonal_naive(), data).metrics   # (mae, rmse, mape, bias)
 ```
-to print "Hello World" to standard output.
 <!-- DESCRIBE THE ESSENTIAL USAGE ABOVE -->
 
 ## Tests
