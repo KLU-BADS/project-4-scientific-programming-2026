@@ -149,5 +149,44 @@ using Test
             incomplete_temperatures
         )
     end
+    @testset "generate_forecast" begin
+        # Simple predictor used only for testing.
+        # It makes the result easy to calculate by hand.
+        predictor(time, month, temperature, trend, seasonality) =
+            time + month + temperature
+
+        times = [1.0, 2.0, 3.0]
+        months = [1, 2, 3]
+        temperatures = [10.0, 20.0, 30.0]
+
+        forecasts = generate_forecast(
+            predictor,
+            times,
+            months,
+            temperatures,
+            nothing,
+            nothing
+        )
+
+        @test forecasts ≈ [12.0, 24.0, 36.0]
+
+        @test_throws DimensionMismatch generate_forecast(
+            predictor,
+            [1.0, 2.0],
+            [1],
+            [10.0, 20.0],
+            nothing,
+            nothing
+        )
+
+        @test_throws DimensionMismatch generate_forecast(
+            predictor,
+            [1.0, 2.0],
+            [1, 2],
+            [10.0],
+            nothing,
+            nothing
+        )
+    end
 
 end

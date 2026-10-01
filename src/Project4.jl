@@ -15,5 +15,6 @@ export holdout_split, mae, rmse, mape, bias, evaluate
 export seasonal_naive, seasonal_naive_growth
 export validate, backtest, compare_forecasters
 export monthly_temperature_baseline, future_temperature_scenario
+export generate_forecast
 
 end # module Project4
