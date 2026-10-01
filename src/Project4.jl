@@ -7,6 +7,7 @@ module Project4
 
 # Files to be included
 include("validation.jl")
+include("forecasting.jl")
 
 # Functions to be exported
 export holdout_split, mae, rmse, mape, bias, evaluate
