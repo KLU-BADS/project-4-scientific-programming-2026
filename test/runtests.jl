@@ -103,5 +103,51 @@ using Test
         @test [r.name for r in rows] == ["growth", "naive"]   # best first
         @test rows[1].mae < rows[2].mae
     end
+    @testset "temperature scenarios" begin
+        # Two years of synthetic monthly temperatures.
+        # Year 1: 1°C to 12°C
+        # Year 2: 3°C to 14°C
+        months = repeat(collect(1:12), 2)
+        temperatures = vcat(
+            Float64.(1:12),
+            Float64.(3:14)
+        )
+
+        baseline = monthly_temperature_baseline(months, temperatures)
+
+        # The baseline should contain all 12 calendar months.
+        @test sort(collect(keys(baseline))) == collect(1:12)
+
+        # Monthly averages should be 2°C, 3°C, ..., 13°C.
+        @test [baseline[m] for m in 1:12] ≈ Float64.(2:13)
+
+        # With no warming adjustment, use the baseline temperatures.
+        @test future_temperature_scenario(
+            [1, 7, 12],
+            baseline
+        ) ≈ [2.0, 8.0, 13.0]
+
+        # A +1.5°C scenario should add 1.5°C to every selected month.
+        @test future_temperature_scenario(
+            [1, 7, 12],
+            baseline;
+            warming_c = 1.5
+        ) ≈ [3.5, 9.5, 14.5]
+
+        # Months and temperatures must contain the same number of values.
+        @test_throws DimensionMismatch monthly_temperature_baseline(
+            [1, 2],
+            [10.0]
+        )
+
+        # A baseline cannot be calculated if one calendar month is missing.
+        incomplete_months = repeat(collect(1:11), 2)
+        incomplete_temperatures = fill(10.0, length(incomplete_months))
+
+        @test_throws ArgumentError monthly_temperature_baseline(
+            incomplete_months,
+            incomplete_temperatures
+        )
+    end
 
 end
