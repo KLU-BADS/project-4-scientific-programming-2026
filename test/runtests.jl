@@ -104,50 +104,47 @@ using Test
         @test rows[1].mae < rows[2].mae
     end
     @testset "temperature scenarios" begin
-        # Two years of synthetic monthly temperatures.
-        # Year 1: 1°C to 12°C
-        # Year 2: 3°C to 14°C
-        months = repeat(collect(1:12), 2)
-        temperatures = vcat(
-            Float64.(1:12),
-            Float64.(3:14)
-        )
+    years = repeat(collect(2021:2024), inner = 12)
+    months = repeat(collect(1:12), 4)
 
-        baseline = monthly_temperature_baseline(months, temperatures)
+    temperatures = [
+        1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0, 12.0,
+        2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0, 12.0, 13.0,
+        3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
+        4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0
+    ]
 
-        # The baseline should contain all 12 calendar months.
-        @test sort(collect(keys(baseline))) == collect(1:12)
+    average_changes, latest_temperatures =
+        monthly_temperature_changes(years, months, temperatures)
 
-        # Monthly averages should be 2°C, 3°C, ..., 13°C.
-        @test [baseline[m] for m in 1:12] ≈ Float64.(2:13)
+    @test average_changes[1] ≈ 1.0
+    @test latest_temperatures[1] == 4.0
 
-        # With no warming adjustment, use the baseline temperatures.
-        @test future_temperature_scenario(
-            [1, 7, 12],
-            baseline
-        ) ≈ [2.0, 8.0, 13.0]
+    future = future_temperature_scenario(
+        [1, 2, 3],
+        latest_temperatures,
+        average_changes
+    )
 
-        # A +1.5°C scenario should add 1.5°C to every selected month.
-        @test future_temperature_scenario(
-            [1, 7, 12],
-            baseline;
-            warming_c = 1.5
-        ) ≈ [3.5, 9.5, 14.5]
+    @test future == [5, 6, 7]
 
-        # Months and temperatures must contain the same number of values.
-        @test_throws DimensionMismatch monthly_temperature_baseline(
-            [1, 2],
-            [10.0]
-        )
+    test_latest = Dict(
+        1 => 15.0,
+        2 => 15.0
+    )
 
-        # A baseline cannot be calculated if one calendar month is missing.
-        incomplete_months = repeat(collect(1:11), 2)
-        incomplete_temperatures = fill(10.0, length(incomplete_months))
+    test_changes = Dict(
+        1 => 2.33,
+        2 => 2.70
+    )
 
-        @test_throws ArgumentError monthly_temperature_baseline(
-            incomplete_months,
-            incomplete_temperatures
-        )
+    rounded = future_temperature_scenario(
+        [1, 2],
+        test_latest,
+        test_changes
+    )
+
+    @test rounded == [17, 18]
     end
     @testset "generate_forecast" begin
         # Simple predictor used only for testing.
