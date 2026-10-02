@@ -1,37 +1,61 @@
 """
-    monthly_temperature_baseline(months, temperatures)
+    monthly_temperature_changes(years, months, temperatures)
 
-Calculate the historical average temperature for each calendar month.
-
-Returns a dictionary where the keys are month numbers (`1` to `12`)
-and the values are the corresponding average temperatures.
+Calculate the average year-to-year temperature change for each month
+and store the most recent temperature for that month.
 """
-function monthly_temperature_baseline(months, temperatures)
-    length(months) == length(temperatures) ||
-        throw(DimensionMismatch("months and temperatures must have the same length"))
+function monthly_temperature_changes(years, months, temperatures)
+    n = length(years)
 
-    baseline = Dict{Int, Float64}()
+    length(months) == n ||
+        throw(DimensionMismatch("years and months must have the same length"))
+
+    length(temperatures) == n ||
+        throw(DimensionMismatch("years and temperatures must have the same length"))
+
+    average_changes = Dict{Int, Float64}()
+    latest_temperatures = Dict{Int, Float64}()
 
     for month in 1:12
-        monthly_values = temperatures[months .== month]
+        indices = findall(months .== month)
 
-        isempty(monthly_values) &&
-            throw(ArgumentError("no temperature data available for month $month"))
+        length(indices) >= 2 ||
+            throw(ArgumentError("at least two temperature values are required for month $month"))
 
-        baseline[month] = sum(monthly_values) / length(monthly_values)
+        month_years = years[indices]
+        month_temperatures = temperatures[indices]
+
+        order = sortperm(month_years)
+        sorted_temperatures = month_temperatures[order]
+
+        changes = diff(sorted_temperatures)
+
+        average_changes[month] = sum(changes) / length(changes)
+        latest_temperatures[month] = sorted_temperatures[end]
     end
 
-    return baseline
+    return average_changes, latest_temperatures
 end
 
 
 """
-    future_temperature_scenario(months, baseline; warming_c = 0.0)
+    future_temperature_scenario(months, latest_temperatures, average_changes)
 
-Create future monthly temperatures from a historical monthly baseline.
-
-`warming_c` is added to each baseline monthly temperature.
+Estimate the future temperature for each month using the most recent
+temperature plus its average historical change.
 """
-function future_temperature_scenario(months, baseline; warming_c::Real = 0.0)
-    return [baseline[Int(month)] + warming_c for month in months]
+function future_temperature_scenario(
+    months,
+    latest_temperatures,
+    average_changes
+)
+    return [
+        floor(
+            Int,
+            latest_temperatures[Int(month)] +
+            average_changes[Int(month)] +
+            0.5
+        )
+        for month in months
+    ]
 end
