@@ -15,7 +15,7 @@ include("forecast_output.jl")
 export holdout_split, mae, rmse, mape, bias, evaluate
 export seasonal_naive, seasonal_naive_growth
 export validate, backtest, compare_forecasters
-export monthly_temperature_changes, future_temperature_scenario
+export monthly_temperature_baseline, future_temperature_scenario
 export generate_forecast
 export create_forecast_output
 
