@@ -13,3 +13,6 @@ Manifest.toml
 # Editors / OS
 .vscode/
 .DS_Store
+
+# Downloaded AEMET data (scripts/temperature.jl)
+aemet_cache/
