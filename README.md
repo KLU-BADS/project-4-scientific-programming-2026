@@ -41,6 +41,7 @@ Then run the scripts from the project folder:
 | `julia --project=. scripts/plot_validation.jl` | Saves the actual vs forecast chart for the 12 test months |
 | `julia --project=. scripts/run_forecast.jl` | Forecasts Sep 2026 – Dec 2028 under four warming scenarios and saves the tables |
 | `julia --project=. scripts/plot_results.jl` | Saves the accuracy, seasonal pattern and sunlight charts |
+| `julia --project=. scripts/temperature.jl` | Downloads the AEMET temperature data and writes `data/temperature_2021_2026.csv` (needs internet; the first run takes a few minutes) |
 
 All outputs are written to the `results/` folder.
 
