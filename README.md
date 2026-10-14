@@ -42,8 +42,20 @@ Then run the scripts from the project folder:
 | `julia --project=. scripts/run_forecast.jl` | Forecasts Sep 2026 – Dec 2028 under four warming scenarios and saves the tables |
 | `julia --project=. scripts/plot_results.jl` | Saves the accuracy, seasonal pattern and sunlight charts |
 | `julia --project=. scripts/temperature.jl` | Downloads the AEMET temperature data and writes `data/temperature_2021_2026.csv` (needs internet; the first run takes a few minutes) |
+| `julia --project=. scripts/collect_solar_ree.jl` | Downloads monthly solar PV generation (GWh) from the REE open data API (`apidatos.ree.es`) and writes `data/solar_production.csv` (no key needed) |
+| `julia --project=. scripts/collect_sunlight_aemet.jl` | Downloads monthly sunshine hours from AEMET OpenData (`opendata.aemet.es`), averages 10 weather stations and writes `data/sunlight_hours.csv` (needs a free API key, see below) |
+| `julia --project=. scripts/update_data_csv.jl` | Writes the downloaded `solar_gwh` and `sunlight_hours` into `data.csv`; run it with `--dry-run` first to see which values would change |
 
-All outputs are written to the `results/` folder.
+The data scripts write to the `data/` folder and all other outputs to the `results/` folder.
+
+The sunlight script reads your AEMET key from an environment variable. Never write
+the key into a file or commit it:
+
+```bash
+export AEMET_API_KEY="your-key"
+```
+
+Data sources: REE open data (apidatos.ree.es) and AEMET OpenData (opendata.aemet.es).
 
 The validation functions can also be used directly on any table with `month`
 and `solar_gwh` columns, ordered by time:
