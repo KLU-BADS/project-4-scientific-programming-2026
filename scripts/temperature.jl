@@ -1,5 +1,5 @@
 # temperature.jl
-# Downloads AEMET temperature data and writes scripts/temperature_2021_2026.csv
+# Downloads AEMET temperature data and writes data/temperature_2021_2026.csv
 # (year, month, avg_temperature_c).
 #
 # Method: 2021-2024 use AEMET annual statistics (monthly mean temperature, TMED);
@@ -11,7 +11,7 @@
 #   julia --project=. scripts/temperature.jl
 # Needs an internet connection. Works on macOS, Windows and Linux, and does not
 # need any program installed besides Julia.
-# Output and downloaded files are placed next to this script.
+# The CSV is written to the data folder; downloaded files are kept next to this script.
 
 # Use the repository's environment and install any missing packages.
 import Pkg
@@ -23,7 +23,7 @@ using ZipArchives: ZipReader, zip_names, zip_readentry
 # ------------------------------ Settings ------------------------------
 const HERE    = @__DIR__
 const CACHE   = joinpath(HERE, "aemet_cache")                 # downloaded files, not fetched again
-const OUT_CSV = joinpath(HERE, "temperature_2021_2026.csv")   # the only output file
+const OUT_CSV = joinpath(dirname(HERE), "data", "temperature_2021_2026.csv")   # the only output file
 const COL     = "avg_temperature_c"                           # name of the third column
 const DIGITS  = 0                                             # 0 = integer; use 1 or 2 to keep decimals
 const LAST_YM = (2026, 8)                                     # update when a newer monthly report is published
@@ -119,6 +119,7 @@ end
 
 # ---------------------------------- Main ----------------------------------
 mkpath(CACHE)
+mkpath(dirname(OUT_CSV))
 data = Dict{Tuple{Int,Int},NTuple{3,Float64}}()
 
 for y in 2021:min(2024, LAST_YM[1])
