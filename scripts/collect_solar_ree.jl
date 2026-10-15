@@ -9,9 +9,9 @@
 #  * Peninsular Spain + Canary + Balearic islands (national total, like the project data).
 #  * Runs from VS Code (press run), the terminal, or GitHub Actions.
 #
-# Terminal:  julia --project=scripts scripts/collect_solar_ree.jl
+# Terminal:  julia --project=. scripts/collect_solar_ree.jl
 #            (install the packages once with:
-#             julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()')
+#             julia --project=. -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()')
 
 using HTTP, JSON, CSV, DataFrames, Dates
 

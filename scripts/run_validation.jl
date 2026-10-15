@@ -2,12 +2,12 @@
 #
 # Usage, from the repository folder:
 #
-#     julia --project=scripts scripts/run_validation.jl
+#     julia --project=. scripts/run_validation.jl
 #
 # Loads the data and the team model from the Project4 package. The packages
-# come from scripts/Project.toml; install them once with
+# come from the root Project.toml; install them once with
 #
-#     julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
+#     julia --project=. -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
 
 using Project4
 using Printf

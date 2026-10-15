@@ -9,8 +9,8 @@
 #
 # Usage, from the repository folder:
 #
-#     julia --project=scripts scripts/update_data_csv.jl --dry-run    (only shows the changes)
-#     julia --project=scripts scripts/update_data_csv.jl              (changes data.csv)
+#     julia --project=. scripts/update_data_csv.jl --dry-run    (only shows the changes)
+#     julia --project=. scripts/update_data_csv.jl              (changes data.csv)
 
 using CSV
 using DataFrames

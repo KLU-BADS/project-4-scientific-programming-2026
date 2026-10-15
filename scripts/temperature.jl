@@ -8,14 +8,14 @@
 # Values are rounded to whole degrees (DIGITS = 0).
 #
 # Run from the repository root:
-#   julia --project=scripts scripts/temperature.jl
+#   julia --project=. scripts/temperature.jl
 # Needs an internet connection. Works on macOS, Windows and Linux, and does not
 # need any program installed besides Julia.
 # The CSV is written to the data folder; downloaded files are kept next to this script.
 
-# Use the scripts environment (scripts/Project.toml) and install any missing packages.
+# Use the project environment (root Project.toml) and install any missing packages.
 import Pkg
-Pkg.activate(@__DIR__)
+Pkg.activate(dirname(@__DIR__))
 Pkg.instantiate()
 using Downloads, Poppler_jll
 using ZipArchives: ZipReader, zip_names, zip_readentry

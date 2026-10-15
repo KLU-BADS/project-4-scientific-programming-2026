@@ -2,11 +2,11 @@
 #
 # Usage, from the repository folder:
 #
-#     julia --project=scripts scripts/plot_results.jl
+#     julia --project=. scripts/plot_results.jl
 #
-# The packages come from scripts/Project.toml; install them once with
+# The packages come from the root Project.toml; install them once with
 #
-#     julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
+#     julia --project=. -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
 #
 # Saves:
 #     results/accuracy_comparison.png   team model vs baselines (hold-out and backtest MAPE)
