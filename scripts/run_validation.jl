@@ -7,7 +7,7 @@
 # Loads the data and the team model exactly as src/model.jl does. The packages
 # come from scripts/Project.toml; install them once with
 #
-#     julia --project=scripts -e 'using Pkg; Pkg.instantiate()'
+#     julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
 
 using Project4
 using Printf

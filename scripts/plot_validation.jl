@@ -6,7 +6,7 @@
 #
 # The packages come from scripts/Project.toml; install them once with
 #
-#     julia --project=scripts -e 'using Pkg; Pkg.instantiate()'
+#     julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
 #
 # Saves results/validation_actual_vs_forecast.png
 

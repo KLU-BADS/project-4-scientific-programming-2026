@@ -3,7 +3,7 @@
 # the root Project.toml, so it uses this package (Project4) directly.
 #
 # Install once, from the repository folder:
-#     julia --project=scripts -e 'using Pkg; Pkg.instantiate()'
+#     julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
 # Then run any script with --project=scripts, for example:
 #     julia --project=scripts scripts/run_validation.jl
 

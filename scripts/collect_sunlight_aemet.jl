@@ -5,14 +5,15 @@
 # data/sunlight_hours.csv  (columns: year, month, sunlight_hours).
 #
 # Setup (once):
-#   Dependencies (HTTP, JSON, CSV, DataFrames) come from the project environment.
+#   Install the packages (declared in scripts/Project.toml):
+#     julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
 #   Get a free API key at https://opendata.aemet.es/ and store it as an
 #   environment variable. NEVER write the key into this file or commit it to
 #   GitHub:
 #     export AEMET_API_KEY="your-key"        (Mac / Linux)
 #     $env:AEMET_API_KEY = "your-key"        (Windows PowerShell)
 #
-# Run:  julia --project=. scripts/collect_sunlight_aemet.jl
+# Run:  julia --project=scripts scripts/collect_sunlight_aemet.jl
 #       (or press run in VS Code after setting ENV["AEMET_API_KEY"] in the REPL)
 
 using HTTP

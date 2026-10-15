@@ -30,7 +30,7 @@ Install everything the scripts need (needed only once). All packages are declare
 `scripts/Project.toml`, so nothing has to be installed globally:
 
 ```bash
-julia --project=scripts -e 'using Pkg; Pkg.instantiate()'
+julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
 ```
 
 Then run the scripts from the project folder:
