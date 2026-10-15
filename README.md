@@ -26,25 +26,25 @@ julia --project=.
 
 
 <!-- DESCRIBE THE ESSENTIAL USAGE BELOW -->
-Install the project's dependencies, plus Plots for the charts (needed only once):
+Install everything the scripts need (needed only once). All packages are declared in
+`scripts/Project.toml`, so nothing has to be installed globally:
 
 ```bash
-julia --project=. -e 'using Pkg; Pkg.instantiate()'
-julia -e 'using Pkg; Pkg.add("Plots")'
+julia --project=scripts -e 'using Pkg; Pkg.instantiate()'
 ```
 
 Then run the scripts from the project folder:
 
 | Script | What it does |
 |---|---|
-| `julia --project=. scripts/run_validation.jl` | Validates the model against two simple baselines and prints the error measures |
-| `julia --project=. scripts/plot_validation.jl` | Saves the actual vs forecast chart for the 12 test months |
-| `julia --project=. scripts/run_forecast.jl` | Forecasts Sep 2026 – Dec 2028 under four warming scenarios and saves the tables |
-| `julia --project=. scripts/plot_results.jl` | Saves the accuracy, seasonal pattern and sunlight charts |
-| `julia --project=. scripts/temperature.jl` | Downloads the AEMET temperature data and writes `data/temperature_2021_2026.csv` (needs internet; the first run takes a few minutes) |
-| `julia --project=. scripts/collect_solar_ree.jl` | Downloads monthly solar PV generation (GWh) from the REE open data API (`apidatos.ree.es`) and writes `data/solar_production.csv` (no key needed) |
-| `julia --project=. scripts/collect_sunlight_aemet.jl` | Downloads monthly sunshine hours from AEMET OpenData (`opendata.aemet.es`), averages 10 weather stations and writes `data/sunlight_hours.csv` (needs a free API key, see below) |
-| `julia --project=. scripts/update_data_csv.jl` | Writes the downloaded `solar_gwh` and `sunlight_hours` into `data.csv`; run it with `--dry-run` first to see which values would change |
+| `julia --project=scripts scripts/run_validation.jl` | Validates the model against two simple baselines and prints the error measures |
+| `julia --project=scripts scripts/plot_validation.jl` | Saves the actual vs forecast chart for the 12 test months |
+| `julia --project=scripts scripts/run_forecast.jl` | Forecasts Sep 2026 – Dec 2028 under four warming scenarios and saves the tables |
+| `julia --project=scripts scripts/plot_results.jl` | Saves the accuracy, seasonal pattern and sunlight charts |
+| `julia --project=scripts scripts/temperature.jl` | Downloads the AEMET temperature data and writes `data/temperature_2021_2026.csv` (needs internet; the first run takes a few minutes) |
+| `julia --project=scripts scripts/collect_solar_ree.jl` | Downloads monthly solar PV generation (GWh) from the REE open data API (`apidatos.ree.es`) and writes `data/solar_production.csv` (no key needed) |
+| `julia --project=scripts scripts/collect_sunlight_aemet.jl` | Downloads monthly sunshine hours from AEMET OpenData (`opendata.aemet.es`), averages 10 weather stations and writes `data/sunlight_hours.csv` (needs a free API key, see below) |
+| `julia --project=scripts scripts/update_data_csv.jl` | Writes the downloaded `solar_gwh` and `sunlight_hours` into `data.csv`; run it with `--dry-run` first to see which values would change |
 
 The data scripts write to the `data/` folder and all other outputs to the `results/` folder.
 

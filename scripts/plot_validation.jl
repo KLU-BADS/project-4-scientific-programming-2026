@@ -2,11 +2,11 @@
 #
 # Usage, from the repository folder:
 #
-#     julia --project=. scripts/plot_validation.jl
+#     julia --project=scripts scripts/plot_validation.jl
 #
-# Needs CSV, DataFrames and Plots once, in your default Julia environment:
+# The packages come from scripts/Project.toml; install them once with
 #
-#     julia -e 'using Pkg; Pkg.add(["CSV", "DataFrames", "Plots"])'
+#     julia --project=scripts -e 'using Pkg; Pkg.instantiate()'
 #
 # Saves results/validation_actual_vs_forecast.png
 

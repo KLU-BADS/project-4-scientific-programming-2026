@@ -2,11 +2,11 @@
 #
 # Usage, from the repository folder:
 #
-#     julia --project=. scripts/run_forecast.jl
+#     julia --project=scripts scripts/run_forecast.jl
 #
-# Needs Plots once, in your default Julia environment:
+# The packages come from scripts/Project.toml; install them once with
 #
-#     julia -e 'using Pkg; Pkg.add("Plots")'
+#     julia --project=scripts -e 'using Pkg; Pkg.instantiate()'
 #
 # Uses the model fitted on ALL historical months (src/model.jl) and the
 # forecasting functions of the package (generate_forecast, ...). Saves:

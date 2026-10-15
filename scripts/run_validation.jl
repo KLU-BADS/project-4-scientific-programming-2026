@@ -2,12 +2,12 @@
 #
 # Usage, from the repository folder:
 #
-#     julia --project=. scripts/run_validation.jl
+#     julia --project=scripts scripts/run_validation.jl
 #
-# Loads the data and the team model exactly as src/model.jl does, so it needs
-# the CSV and DataFrames packages once, in your default Julia environment:
+# Loads the data and the team model exactly as src/model.jl does. The packages
+# come from scripts/Project.toml; install them once with
 #
-#     julia -e 'using Pkg; Pkg.add(["CSV", "DataFrames"])'
+#     julia --project=scripts -e 'using Pkg; Pkg.instantiate()'
 
 using Project4
 using Printf
