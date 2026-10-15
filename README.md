@@ -238,7 +238,7 @@ The model is fitted on all 68 months (Jan 2021 – Aug 2026). Future months use 
 | Year | No warming | +1 °C | +2 °C | +3 °C |
 |---|---|---|---|---|
 | 2027 | 71.09 TWh | 71.05 TWh (−0.06 %) | 70.98 TWh (−0.15 %) | 70.91 TWh (−0.25 %) |
-| 2028 | 79.50 TWh | 79.46 TWh (−0.06 %) | 79.38 TWh (−0.15 %) | 79.30 TWh (−0.25 %) |
+| 2028 | 79.51 TWh | 79.46 TWh (−0.06 %) | 79.38 TWh (−0.15 %) | 79.31 TWh (−0.25 %) |
 
 For comparison, our data shows about 51 TWh of solar production in 2025. Full tables: [`forecast_annual_summary.csv`](results/forecast_annual_summary.csv) and, month by month, [`forecast_monthly_scenarios.csv`](results/forecast_monthly_scenarios.csv).
 
