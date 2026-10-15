@@ -5,18 +5,18 @@
 # data/sunlight_hours.csv  (columns: year, month, sunlight_hours).
 #
 # Setup (once):
-#   julia -e 'using Pkg; Pkg.add(["HTTP", "JSON3", "CSV", "DataFrames"])'
+#   Dependencies (HTTP, JSON, CSV, DataFrames) come from the project environment.
 #   Get a free API key at https://opendata.aemet.es/ and store it as an
 #   environment variable. NEVER write the key into this file or commit it to
 #   GitHub:
 #     export AEMET_API_KEY="your-key"        (Mac / Linux)
 #     $env:AEMET_API_KEY = "your-key"        (Windows PowerShell)
 #
-# Run:  julia --project=. src/collect_sunlight_aemet.jl
+# Run:  julia --project=. scripts/collect_sunlight_aemet.jl
 #       (or press run in VS Code after setting ENV["AEMET_API_KEY"] in the REPL)
 
 using HTTP
-using JSON3
+using JSON
 using CSV
 using DataFrames
 using Dates
@@ -51,7 +51,7 @@ function fetch_json(url::AbstractString, headers = Pair{String,String}[])
     for attempt in 1:5
         try
             resp = HTTP.get(url, headers; retries = 1, read_idle_timeout = 60)
-            return JSON3.read(String(resp.body))
+            return JSON.parse(String(resp.body))
         catch e
             attempt == 5 && rethrow()
             @info "Connection problem, retrying in $(5attempt)s" attempt exception = (e isa HTTP.Exceptions.StatusError ? "HTTP $(e.status)" : string(typeof(e)))
@@ -65,8 +65,8 @@ function aemet_get(path::AbstractString)
     key = get(ENV, "AEMET_API_KEY", "")
     isempty(key) && error("Set the AEMET_API_KEY environment variable first (see top of file).")
     meta = fetch_json(AEMET_BASE * path, ["api_key" => key, "Accept" => "application/json"])
-    meta.estado == 200 || error("AEMET error $(meta.estado): $(meta.descripcion)")
-    return fetch_json(String(meta.datos))
+    meta["estado"] == 200 || error("AEMET error $(meta["estado"]): $(get(meta, "descripcion", ""))")
+    return fetch_json(String(meta["datos"]))
 end
 
 """Mean sunshine hours PER DAY of one station and year (AEMET field `inso`)."""
@@ -75,10 +75,10 @@ function fetch_station_year(year::Int, station::AbstractString)
     records = aemet_get(path)
     rows = DataFrame(year = Int[], month = Int[], station = String[], daily = Float64[])
     for r in records
-        y, m = parse.(Int, split(String(r.fecha), "-"))   # fecha looks like "2021-1"
-        m == 13 && continue                                # month 13 = yearly summary
-        haskey(r, :inso) || continue                       # station did not report sunshine
-        push!(rows, (y, m, station, parse(Float64, replace(String(r.inso), "," => "."))))
+        y, m = parse.(Int, split(String(r["fecha"]), "-"))  # fecha looks like "2021-1"
+        m == 13 && continue                                 # month 13 = yearly summary
+        haskey(r, "inso") || continue                       # station did not report sunshine
+        push!(rows, (y, m, station, parse(Float64, replace(String(r["inso"]), "," => "."))))
     end
     return rows
 end
