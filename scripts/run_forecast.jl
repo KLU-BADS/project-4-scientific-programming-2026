@@ -8,7 +8,7 @@
 #
 #     julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
 #
-# Uses the model fitted on ALL historical months (src/model.jl) and the
+# Uses the model fitted on ALL historical months (estimate_trend, ...) and the
 # forecasting functions of the package (generate_forecast, ...). Saves:
 #
 #     results/forecast_monthly_scenarios.csv   one row per future month and scenario
@@ -22,7 +22,9 @@ using Printf
 using Plots
 
 cd(dirname(@__DIR__))                            # repository folder: data.csv lives here
-include(joinpath("..", "src", "model.jl"))       # data, trend, seasonality (all months), predict_solar
+data        = load_data()                        # data.csv, cleaned, with a `time` column
+trend       = estimate_trend(data)               # model fitted on ALL months
+seasonality = estimate_seasonality(data, trend)
 
 # ---------------------------------------------------------------------------
 # Settings
@@ -41,7 +43,7 @@ last_year, last_month = Int(data.year[end]), Int(data.month[end])
 future = [(y, m) for y in last_year:END_YEAR for m in 1:12 if (y, m) > (last_year, last_month)]
 years  = first.(future)
 months = last.(future)
-times  = (years .- 2021) .+ (months .- 1) ./ 12   # same time scale as model.jl
+times  = (years .- 2021) .+ (months .- 1) ./ 12   # same time scale as load_data
 
 # Typical temperature of each calendar month, from all historical data
 baseline = monthly_temperature_baseline(data.month, data.avg_temperature_c)

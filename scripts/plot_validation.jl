@@ -15,8 +15,7 @@ using Printf
 using Plots
 
 cd(dirname(@__DIR__))                            # repository folder: data.csv lives here
-include(joinpath("..", "src", "model.jl"))       # data, estimate_trend, predict_solar, ...
-include(joinpath("..", "src", "train_test.jl"))  # forecast_model
+data = load_data()                               # data.csv, cleaned, with a `time` column
 
 # ---------------------------------------------------------------------------
 # Validate the team model and the best baseline on the last 12 months

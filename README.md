@@ -183,12 +183,14 @@ OpenData ([opendata.aemet.es](https://opendata.aemet.es)).
 
 #### Using the functions directly
 
-The validation functions can also be used on any table with `month` and `solar_gwh`
-columns, ordered by time:
+All functions are part of the `Project4` package, so they can also be used directly,
+for example in the Julia REPL started with `julia --project=.`:
 
 ```julia
 using Project4
-validate(seasonal_naive(), data).metrics   # (mae, rmse, mape, bias)
+data  = load_data()                          # data.csv, one row per month
+model = train_model(data)                    # trend and seasonal factors
+validate(forecast_model, data).metrics       # (mae, rmse, mape, bias) on the last 12 months
 ```
 <!-- DESCRIBE THE ESSENTIAL USAGE ABOVE -->
 

@@ -1,9 +1,8 @@
-# Train / test wrapper around the team model in model.jl, so it can be
-# validated: fit on the training months only, then forecast the test months.
+# Train / test wrapper around the model in model.jl, so it can be validated:
+# fit on the training months only, then forecast the test months.
 #
-# Needs model.jl (estimate_trend, estimate_seasonality) to be loaded first.
-# `train` and `test` are DataFrames with the columns `time` and `month`
-# (and `solar_gwh` in `train`), as prepared at the top of model.jl.
+# `train` and `test` are tables (e.g. from `load_data`) with the columns `time`,
+# `month` and `avg_temperature_c` (and `solar_gwh` in `train`).
 
 """
     train_model(train)
@@ -23,7 +22,7 @@ end
     predict_model(model, test; temperature = true)
 
 Forecast `solar_gwh` for each row of `test` with a model from `train_model`,
-using `predict_solar` from model.jl:
+using [`predict_solar`](@ref):
 
     forecast = (intercept + slope × time) × seasonal factor × temperature efficiency
 

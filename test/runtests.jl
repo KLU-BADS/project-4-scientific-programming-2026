@@ -17,6 +17,81 @@ using Test
     growing = (month = collect(months),
                solar_gwh = [base[m] * 1.1^y for (m, y) in zip(months, years)])
 
+    # Synthetic monthly data for the model tests: an exact linear trend
+    # (1000 + 500 × time GWh), a fixed seasonal pattern that averages 1, and
+    # mild temperatures (no efficiency loss). 4 years = 48 months.
+    pattern = [0.6, 0.7, 0.9, 1.1, 1.3, 1.4, 1.5, 1.4, 1.1, 0.8, 0.65, 0.55]
+    pattern = pattern ./ (sum(pattern) / 12)
+    mo   = repeat(collect(1:12), 4)
+    yr   = repeat(collect(0:3); inner = 12)
+    tm   = yr .+ (mo .- 1) ./ 12
+    true_trend = (slope = 500.0, intercept = 1000.0)
+    synth = (year = 2021 .+ yr, month = mo, time = tm,
+             avg_temperature_c = fill(15.0, 48),
+             solar_gwh = (1000.0 .+ 500.0 .* tm) .* pattern[mo])
+
+    @testset "load_data" begin
+        d = load_data()
+        @test size(d, 1) > 0
+        @test :time in propertynames(d)
+        @test !any(ismissing, d.solar_gwh)
+        @test !any(ismissing, d.avg_temperature_c)
+        @test d.time[1] ≈ (d.year[1] - 2021) + (d.month[1] - 1) / 12
+    end
+
+    @testset "temperature_efficiency" begin
+        @test temperature_efficiency(20.0) == 1.0
+        @test temperature_efficiency(25.0) == 1.0
+        @test temperature_efficiency(30.0) ≈ 0.98
+        eff = estimate_temperature_efficiency(synth)
+        @test all(eff.efficiency_factor .== 1.0)
+    end
+
+    @testset "estimate_trend" begin
+        # A pure straight line is recovered exactly.
+        line = (time = tm, solar_gwh = 1000.0 .+ 500.0 .* tm)
+        tr = estimate_trend(line)
+        @test tr.slope ≈ 500.0
+        @test tr.intercept ≈ 1000.0
+    end
+
+    @testset "estimate_seasonality" begin
+        # With the true trend, the seasonal pattern is recovered exactly.
+        s = estimate_seasonality(synth, true_trend)
+        @test sort(s.month) == collect(1:12)
+        @test [s.seasonal_factor[s.month .== m][1] for m in 1:12] ≈ pattern
+        @test sum(s.seasonal_factor) / 12 ≈ 1.0
+        # Hot months: the heat loss is removed before the factors are
+        # computed, so the same pattern comes out (no double counting).
+        hot_temp = [m in (7, 8) ? 30.0 : 15.0 for m in mo]
+        hot = merge(synth, (avg_temperature_c = hot_temp,
+                            solar_gwh = synth.solar_gwh .* temperature_efficiency.(hot_temp)))
+        s_hot = estimate_seasonality(hot, true_trend)
+        @test [s_hot.seasonal_factor[s_hot.month .== m][1] for m in 1:12] ≈ pattern
+    end
+
+    @testset "predict_solar" begin
+        s = estimate_seasonality(synth, true_trend)
+        @test predict_solar(2.0, 7, 15.0, true_trend, s) ≈ (1000 + 500 * 2.0) * pattern[7]
+        # Above 25 °C the efficiency loss is applied.
+        @test predict_solar(2.0, 7, 30.0, true_trend, s) ≈ (1000 + 500 * 2.0) * pattern[7] * 0.98
+    end
+
+    @testset "train_model and predict_model" begin
+        model = train_model(synth)
+        @test keys(model) == (:trend, :seasonality)
+        pred = predict_model(model, synth)
+        @test length(pred) == 48
+        @test all(pred .> 0)
+        # At mild temperatures the temperature factor changes nothing.
+        @test predict_model(model, synth; temperature = false) ≈ pred
+        # forecast_model plugs into the validation tools.
+        r = validate(forecast_model, synth; test_months = 12)
+        @test length(r.predicted) == 12
+        @test all(isfinite, r.predicted)
+        @test forecast_model_no_temperature(synth, synth) ≈ pred
+    end
+
     @testset "holdout_split" begin
         s = holdout_split(68)
         @test s.train == 1:56

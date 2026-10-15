@@ -10,8 +10,8 @@ Data → Model → Validation → Forecasting → Output
 
 | File | Responsibility |
 |---|---|
-| `data.jl` | Loads `data.csv` into a DataFrame (`load_data`). |
-| `model.jl` | Fits the forecasting model (trend and seasonal factors) and defines `predict_solar`, the single-month forecast function used by every other file. |
+| `data.jl` | Loads `data.csv` into a DataFrame, removes incomplete rows and adds the `time` column (`load_data`). |
+| `model.jl` | Defines the forecasting model: estimating the trend and seasonal factors, the temperature efficiency, and `predict_solar`, the single-month forecast function used by every other file. |
 | `train_test.jl` | Wraps the model so it can be trained on some months and tested on others (`train_model`, `predict_model`, `forecast_model`, `forecast_model_no_temperature`). |
 | `validation.jl` | Model-independent validation tools: hold-out split, rolling backtest, error metrics and benchmark forecasters. |
 | `temperature_scenarios.jl` | Builds future monthly temperatures from the historical monthly average plus a warming value. |

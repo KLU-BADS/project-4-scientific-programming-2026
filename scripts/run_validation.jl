@@ -4,7 +4,7 @@
 #
 #     julia --project=scripts scripts/run_validation.jl
 #
-# Loads the data and the team model exactly as src/model.jl does. The packages
+# Loads the data and the team model from the Project4 package. The packages
 # come from scripts/Project.toml; install them once with
 #
 #     julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
@@ -17,8 +17,7 @@ using Printf
 # ---------------------------------------------------------------------------
 
 cd(dirname(@__DIR__))                            # repository folder: data.csv lives here
-include(joinpath("..", "src", "model.jl"))       # defines `data` (with `time`), estimate_trend, ...
-include(joinpath("..", "src", "train_test.jl"))  # train_model, predict_model, forecast_model, ...
+data = load_data()                               # data.csv, cleaned, with a `time` column
 
 path = "data.csv"
 n = length(data.solar_gwh)
