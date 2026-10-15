@@ -26,39 +26,165 @@ julia --project=.
 
 
 <!-- DESCRIBE THE ESSENTIAL USAGE BELOW -->
-Install everything the scripts need (needed only once). All packages are declared in
-`scripts/Project.toml`, so nothing has to be installed globally:
+### Step-by-step guide
+
+All commands are run in a terminal **from the project folder** (the folder created by
+`git clone` above). Unless a step shows a separate Windows version, the same command
+works in macOS/Linux bash and in Windows PowerShell.
+
+#### 1. Prerequisites
+
+* [Julia](https://julialang.org/install/) **1.12 or newer** (check with `julia --version`)
+* [Git](https://git-scm.com/)
+* Optional, only for refreshing the sunlight data (step 5): a free API key from
+  [AEMET OpenData](https://opendata.aemet.es/)
+
+#### 2. Install the packages (once)
 
 ```bash
+julia -e 'using Pkg; Pkg.Registry.update()'
 julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
 ```
 
-Then run the scripts from the project folder:
+The first line updates Julia's list of available package versions. The second installs
+every package the scripts need; they are all declared in `scripts/Project.toml`, so
+nothing has to be installed globally. The first run downloads and precompiles Plots
+and can take several minutes.
 
-| Script | What it does |
-|---|---|
-| `julia --project=scripts scripts/run_validation.jl` | Validates the model against two simple baselines and prints the error measures |
-| `julia --project=scripts scripts/plot_validation.jl` | Saves the actual vs forecast chart for the 12 test months |
-| `julia --project=scripts scripts/run_forecast.jl` | Forecasts Sep 2026 – Dec 2028 under four warming scenarios and saves the tables |
-| `julia --project=scripts scripts/plot_results.jl` | Saves the accuracy, seasonal pattern and sunlight charts |
-| `julia --project=scripts scripts/temperature.jl` | Downloads the AEMET temperature data and writes `data/temperature_2021_2026.csv` (needs internet; the first run takes a few minutes) |
-| `julia --project=scripts scripts/collect_solar_ree.jl` | Downloads monthly solar PV generation (GWh) from the REE open data API (`apidatos.ree.es`) and writes `data/solar_production.csv` (no key needed) |
-| `julia --project=scripts scripts/collect_sunlight_aemet.jl` | Downloads monthly sunshine hours from AEMET OpenData (`opendata.aemet.es`), averages 10 weather stations and writes `data/sunlight_hours.csv` (needs a free API key, see below) |
-| `julia --project=scripts scripts/update_data_csv.jl` | Writes the downloaded `solar_gwh` and `sunlight_hours` into `data.csv`; run it with `--dry-run` first to see which values would change |
+#### 3. Run the analysis
 
-The data scripts write to the `data/` folder and all other outputs to the `results/` folder.
+Run the four scripts in this order. Each one writes its output to the `results/` folder.
 
-The sunlight script reads your AEMET key from an environment variable. Never write
-the key into a file or commit it:
+**a) Validation**: tests the model on months it has not seen.
+
+```bash
+julia --project=scripts scripts/run_validation.jl
+```
+
+Expected (end of the output):
+
+```
+4. Rolling backtest: 12-month forecasts from 7 cut-offs (2023-12 to 2025-06), averaged
+  forecaster                           MAE       RMSE     MAPE       bias
+  team model (full)                  433.9      513.5    11.4%      +57.5
+  ...
+  seasonal naive + growth            464.2      578.5    12.4%     +278.7
+  seasonal naive                     601.6      726.4    14.4%     -535.5
+```
+
+**b) Validation chart**
+
+```bash
+julia --project=scripts scripts/plot_validation.jl
+```
+
+Expected: `Saved results/validation_actual_vs_forecast.png`
+
+**c) Forecast**: forecasts Sep 2026 – Dec 2028 under 0, +1, +2 and +3 °C of warming.
+
+```bash
+julia --project=scripts scripts/run_forecast.jl
+```
+
+Expected:
+
+```
+Annual solar production (complete years)
+  year   scenario      total (TWh)      vs no warming
+  2027   no warming          71.09              0.00%
+  2028   no warming          79.51              0.00%
+  ...
+Saved results/forecast_monthly_scenarios.csv, results/forecast_annual_summary.csv, results/forecast_scenarios.png
+```
+
+**d) Result charts**
+
+```bash
+julia --project=scripts scripts/plot_results.jl
+```
+
+Expected:
+
+```
+Hold-out MAPE:  team model 11.2%, naive + growth 15.3%, naive 18.9%
+Backtest MAPE:  team model 11.4%, naive + growth 12.4%, naive 14.4%
+Sunlight vs model gap: correlation 0.82
+Saved results/accuracy_comparison.png, results/seasonal_pattern.png, results/sunlight_effect.png
+```
+
+#### 4. Run the tests
+
+```bash
+julia --project=. -e 'using Pkg; Pkg.test()'
+```
+
+Expected: `Testing Project4 tests passed`
+
+#### 5. Optional: refresh the data
+
+`data.csv` is already included, so this step is only needed to download the data again.
+All three download scripts need an internet connection.
+
+**a) Solar production** (REE open data, no key needed):
+
+```bash
+julia --project=scripts scripts/collect_solar_ree.jl
+```
+
+**b) Temperature** (AEMET; the first run takes a few minutes):
+
+```bash
+julia --project=scripts scripts/temperature.jl
+```
+
+**c) Sunlight hours** (AEMET OpenData, needs your API key). Set the key for the current
+terminal session only. Never write it into a file or commit it.
+
+macOS / Linux:
 
 ```bash
 export AEMET_API_KEY="your-key"
+julia --project=scripts scripts/collect_sunlight_aemet.jl
 ```
 
-Data sources: REE open data (apidatos.ree.es) and AEMET OpenData (opendata.aemet.es).
+Windows PowerShell:
 
-The validation functions can also be used directly on any table with `month`
-and `solar_gwh` columns, ordered by time:
+```powershell
+$env:AEMET_API_KEY = "your-key"
+julia --project=scripts scripts/collect_sunlight_aemet.jl
+```
+
+**d) Check, then update `data.csv`.** First see which values would change:
+
+```bash
+julia --project=scripts scripts/update_data_csv.jl --dry-run
+```
+
+If the downloaded data matches the current file, this prints `0 value(s) would change.`
+Only if you want to apply the changes, run it again without `--dry-run`, then rerun
+step 3 so the results match the new data.
+
+Data sources: REE open data ([apidatos.ree.es](https://apidatos.ree.es)) and AEMET
+OpenData ([opendata.aemet.es](https://opendata.aemet.es)).
+
+#### 6. Troubleshooting
+
+| Message | Meaning and fix |
+|---|---|
+| `Unsatisfiable requirements detected for package ...` | Julia's list of package versions is out of date. Run `julia -e 'using Pkg; Pkg.Registry.update()'`, then step 2 again. |
+| `... is a direct dependency, but does not appear in the manifest` or `Package Plots ... is required but does not seem to be installed` | The installed packages don't match the project anymore (for example after a `git pull`). Run the second command of step 2 again. |
+| `N dependencies precompiled but different versions are currently loaded` | Harmless. It only appears in the same Julia session that just installed packages. |
+| `SystemError: opening file ".../scripts/run_validation.jl": No such file or directory` or `fatal: not a git repository` | The terminal is not in the project folder. `cd` into the folder created by `git clone` and try again. |
+| `Syntax Error: Can't get Fields array` (from `temperature.jl`) | Harmless warning from Poppler while reading the AEMET PDF reports. The script continues. |
+| `Connection problem, retrying in ...` (often with `EOFError`, from `collect_sunlight_aemet.jl`) | The AEMET server dropped the connection. The script retries automatically up to 5 times. |
+| `Station has missing months (or no data)` | One weather station did not report every month. Harmless: the national value is averaged over the stations that did report. |
+| `Set the AEMET_API_KEY environment variable first` | Set your key as shown in step 5c, in the same terminal window. |
+| The first script takes several minutes before printing anything | Normal on the first run: Julia is precompiling Plots and the other packages. Later runs are much faster. |
+
+#### Using the functions directly
+
+The validation functions can also be used on any table with `month` and `solar_gwh`
+columns, ordered by time:
 
 ```julia
 using Project4
