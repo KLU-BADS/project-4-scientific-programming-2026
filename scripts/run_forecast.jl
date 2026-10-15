@@ -2,11 +2,11 @@
 #
 # Usage, from the repository folder:
 #
-#     julia --project=scripts scripts/run_forecast.jl
+#     julia --project=. scripts/run_forecast.jl
 #
-# The packages come from scripts/Project.toml; install them once with
+# The packages come from the root Project.toml; install them once with
 #
-#     julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
+#     julia --project=. -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
 #
 # Uses the model fitted on ALL historical months (estimate_trend, ...) and the
 # forecasting functions of the package (generate_forecast, ...). Saves:

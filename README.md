@@ -43,12 +43,12 @@ works in macOS/Linux bash and in Windows PowerShell.
 
 ```bash
 julia -e 'using Pkg; Pkg.Registry.update()'
-julia --project=scripts -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
+julia --project=. -e 'using Pkg; Pkg.resolve(); Pkg.instantiate()'
 ```
 
 The first line updates Julia's list of available package versions. The second installs
-every package the scripts need; they are all declared in `scripts/Project.toml`, so
-nothing has to be installed globally. The first run downloads and precompiles Plots
+every package the project and the scripts need; they are all declared in the root
+`Project.toml`, so nothing has to be installed globally. The first run downloads and precompiles Plots
 and can take several minutes.
 
 #### 3. Run the analysis
@@ -58,7 +58,7 @@ Run the four scripts in this order. Each one writes its output to the `results/`
 **a) Validation**: tests the model on months it has not seen.
 
 ```bash
-julia --project=scripts scripts/run_validation.jl
+julia --project=. scripts/run_validation.jl
 ```
 
 Expected (end of the output):
@@ -75,7 +75,7 @@ Expected (end of the output):
 **b) Validation chart**
 
 ```bash
-julia --project=scripts scripts/plot_validation.jl
+julia --project=. scripts/plot_validation.jl
 ```
 
 Expected: `Saved results/validation_actual_vs_forecast.png`
@@ -83,7 +83,7 @@ Expected: `Saved results/validation_actual_vs_forecast.png`
 **c) Forecast**: forecasts Sep 2026 – Dec 2028 under 0, +1, +2 and +3 °C of warming.
 
 ```bash
-julia --project=scripts scripts/run_forecast.jl
+julia --project=. scripts/run_forecast.jl
 ```
 
 Expected:
@@ -100,7 +100,7 @@ Saved results/forecast_monthly_scenarios.csv, results/forecast_annual_summary.cs
 **d) Result charts**
 
 ```bash
-julia --project=scripts scripts/plot_results.jl
+julia --project=. scripts/plot_results.jl
 ```
 
 Expected:
@@ -128,13 +128,13 @@ All three download scripts need an internet connection.
 **a) Solar production** (REE open data, no key needed):
 
 ```bash
-julia --project=scripts scripts/collect_solar_ree.jl
+julia --project=. scripts/collect_solar_ree.jl
 ```
 
 **b) Temperature** (AEMET; the first run takes a few minutes):
 
 ```bash
-julia --project=scripts scripts/temperature.jl
+julia --project=. scripts/temperature.jl
 ```
 
 **c) Sunlight hours** (AEMET OpenData, needs your API key). Set the key for the current
@@ -144,20 +144,20 @@ macOS / Linux:
 
 ```bash
 export AEMET_API_KEY="your-key"
-julia --project=scripts scripts/collect_sunlight_aemet.jl
+julia --project=. scripts/collect_sunlight_aemet.jl
 ```
 
 Windows PowerShell:
 
 ```powershell
 $env:AEMET_API_KEY = "your-key"
-julia --project=scripts scripts/collect_sunlight_aemet.jl
+julia --project=. scripts/collect_sunlight_aemet.jl
 ```
 
 **d) Check, then update `data.csv`.** First see which values would change:
 
 ```bash
-julia --project=scripts scripts/update_data_csv.jl --dry-run
+julia --project=. scripts/update_data_csv.jl --dry-run
 ```
 
 If the downloaded data matches the current file, this prints `0 value(s) would change.`
