@@ -19,6 +19,8 @@ Data → Model → Validation → Forecasting → Output
 | `forecast_output.jl` | Organises forecasts into a results table (`create_forecast_output`). |
 | `Project4.jl` | The package module; includes the files above and exports their functions. |
 
+The `scripts/` folder holds the runnable steps: downloading the data (`collect_solar_ree.jl`, `collect_sunlight_aemet.jl`, `temperature.jl`), updating `data.csv` (`update_data_csv.jl`), running the validation and the forecast (`run_validation.jl`, `run_forecast.jl`) and making the charts (`plot_validation.jl`, `plot_results.jl`). Data files are written to `data/`, all other outputs to `results/`. See the README for how to run them.
+
 ## Data
 
 The model uses one row per month with these columns:
@@ -26,7 +28,7 @@ The model uses one row per month with these columns:
 * `year`, `month`: the calendar month
 * `solar_gwh`: solar electricity production in GWh
 * `avg_temperature_c`: monthly mean temperature in °C
-* `sunlight_hours`: used to check the forecast, not in the model
+* `sunlight_hours`: monthly sunshine hours (not used by the model; used to analyse the forecast errors)
 
 Months with a missing value in any of these columns are removed before the model is fitted.
 
@@ -75,8 +77,8 @@ During validation, the trend and seasonal factors are fitted on the training mon
 ## Forecasting (`temperature_scenarios.jl`, `forecasting.jl`, `forecast_output.jl`)
 
 1. `monthly_temperature_baseline` computes the historical average temperature for each calendar month.
-2. `future_temperature_scenario` adds a warming value (for example +0 °C, +1 °C or +2 °C) to that baseline.
-3. `generate_forecast` calls `predict_solar` for every future month up to 2028, using the fitted trend and seasonal factors.
+2. `future_temperature_scenario` adds a warming value (0, +1, +2 or +3 °C) to that baseline.
+3. `generate_forecast` calls `predict_solar` for every month from September 2026 to December 2028, using the trend and seasonal factors fitted on all 68 months.
 4. `create_forecast_output` returns a table with year, month, scenario, temperature and forecast (GWh).
 
 The forecast is not built from the last observed value: it reads the fitted trend line at each future month and applies that month's seasonal factor and the scenario's temperature.
@@ -108,9 +110,4 @@ forecast --> output
 * Monthly solar production forecasts up to 2028, one table per warming scenario.
 * Plots of historical production, seasonal patterns, validation results and forecasts.
 
-## Limitations
-
-* The trend is linear: it assumes Spain adds a similar amount of production each year.
-* The seasonal pattern is assumed to stay the same every year.
-* The temperature coefficient is fixed and applied to monthly mean air temperature, while panel temperature is usually higher. The real heat effect may be larger.
-* Year-to-year weather variation (for example an unusually cloudy summer) is not forecast.
+For the numbers, charts and limitations, see the [Results section of the README](https://github.com/KLU-BADS/project-4-scientific-programming-2026#results).
