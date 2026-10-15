@@ -19,8 +19,9 @@ using Plots
 using Statistics
 
 cd(dirname(@__DIR__))                            # repository folder: data.csv lives here
-include(joinpath("..", "src", "model.jl"))       # data, trend, seasonality (all months), predict_solar
-include(joinpath("..", "src", "train_test.jl"))  # forecast_model
+data        = load_data()                        # data.csv, cleaned, with a `time` column
+trend       = estimate_trend(data)               # model fitted on ALL months
+seasonality = estimate_seasonality(data, trend)
 
 INK, MUTED, GREY, BLUE = "#0b0b0b", "#52514e", "#a9a8a2", "#2a78d6"
 default(fontfamily = "Helvetica", titlelocation = :left, titlefontsize = 12,

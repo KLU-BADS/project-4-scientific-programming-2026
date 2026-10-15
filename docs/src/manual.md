@@ -12,36 +12,30 @@ Project4
 
 ## Data
 
-This function lives in `src/data.jl`.
-
-| Function | Input | Returns |
-|---|---|---|
-| `load_data()` | None (reads `data.csv` from the current folder) | DataFrame with one row per month |
+```@docs
+load_data
+```
 
 ## Model
 
-These functions live in `src/model.jl`. 
-
-| Function | Input | Returns |
-|---|---|---|
-| `temperature_efficiency(temp_c)` | Monthly mean temperature (°C) | Efficiency factor (1.0 at or below 25 °C) |
-| `estimate_trend(data)` | Table with `time` and `solar_gwh` | `(slope, intercept)` |
-| `estimate_seasonality(data, trend)` | Table with `time`, `month`, `solar_gwh`, `avg_temperature_c`; the fitted trend | DataFrame with `month` and `seasonal_factor` (12 rows) |
-| `estimate_temperature_efficiency(data)` | Table with `year`, `month`, `avg_temperature_c` | DataFrame with the efficiency factor per month (for inspection only) |
-| `predict_solar(time, month, temp_c, trend, seasonality)` | Time (years since Jan 2021), calendar month, temperature, fitted trend and seasonal factors | Forecast in GWh for that month |
+```@docs
+temperature_efficiency
+estimate_trend
+estimate_seasonality
+estimate_temperature_efficiency
+predict_solar
+```
 
 ## Validation
 
 ### Training and testing the model
 
-These functions live in `src/train_test.jl` and need `model.jl` to be loaded first.
-
-| Function | Input | Returns |
-|---|---|---|
-| `train_model(train)` | Training months | `(trend, seasonality)` |
-| `predict_model(model, test; temperature = true)` | Fitted model, test months; `temperature = false` leaves out the temperature factor | Vector of forecasts (GWh) |
-| `forecast_model(train, test)` | Training and test months | Vector of forecasts; the forecaster passed to `validate`, `backtest` and `compare_forecasters` |
-| `forecast_model_no_temperature(train, test)` | Training and test months | The same, without the temperature factor |
+```@docs
+train_model
+predict_model
+forecast_model
+forecast_model_no_temperature
+```
 
 ### Splitting the data
 
