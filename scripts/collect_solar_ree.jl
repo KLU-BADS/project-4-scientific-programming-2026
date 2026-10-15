@@ -11,7 +11,7 @@
 #
 # Terminal:  julia --project=. scripts/collect_solar_ree.jl
 
-using HTTP, JSON3, CSV, DataFrames, Dates
+using HTTP, JSON, CSV, DataFrames, Dates
 
 const DATA_DIR   = joinpath(@__DIR__, "..", "data")
 const URL        = "https://apidatos.ree.es/es/datos/generacion/estructura-generacion"
@@ -33,17 +33,19 @@ function fetch_year(year::Int, island = nothing)
             println("FAILED HTTP ", e.status, "\n  URL: ", url, "\n  Body: ", first(String(e.response.body), 400))
         rethrow()
     end
-    body = JSON3.read(String(resp.body))
+    body = JSON.parse(String(resp.body))
     rows = DataFrame(year = Int[], month = Int[], solar_gwh = Float64[])
-    for item in body.included
-        occursin("fotovoltaica", lowercase(String(item.attributes.title))) || continue
-        for v in item.attributes.values
-            dt = String(v.datetime)                        # "2021-01-01T00:00:00.000+01:00"
-            push!(rows, (parse(Int, dt[1:4]), parse(Int, dt[6:7]), round(Float64(v.value) / 1000; digits = 2)))
+    for item in body["included"]
+        attrs = item["attributes"]
+        occursin("fotovoltaica", lowercase(String(attrs["title"]))) || continue
+        for v in attrs["values"]
+            dt = String(v["datetime"])                     # "2021-01-01T00:00:00.000+01:00"
+            push!(rows, (parse(Int, dt[1:4]), parse(Int, dt[6:7]), round(Float64(v["value"]) / 1000; digits = 2)))
         end
     end
     return rows
 end
+
 
 function main()
     mkpath(DATA_DIR)
