@@ -9,7 +9,7 @@
 #  * Peninsular Spain + Canary + Balearic islands (national total, like the project data).
 #  * Runs from VS Code (press run), the terminal, or GitHub Actions.
 #
-# Terminal:  julia --project=. src/collect_solar_ree.jl
+# Terminal:  julia --project=. scripts/collect_solar_ree.jl
 
 using HTTP, JSON3, CSV, DataFrames, Dates
 

@@ -12,7 +12,7 @@
 #     export AEMET_API_KEY="your-key"        (Mac / Linux)
 #     $env:AEMET_API_KEY = "your-key"        (Windows PowerShell)
 #
-# Run:  julia --project=. src/collect_sunlight_aemet.jl
+# Run:  julia --project=. scripts/collect_sunlight_aemet.jl
 #       (or press run in VS Code after setting ENV["AEMET_API_KEY"] in the REPL)
 
 using HTTP
