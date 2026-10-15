@@ -1,175 +1,113 @@
 # Project design
 
-This page describes the structure of the project: the components it is built from, what each one is responsible for, how they interact, what data they need, and what output they produce.
+This page describes how the project is built: which file does what, how the files work together, what data they need, and what they produce.
 
-The main workflow is:
+The workflow is:
 
-Data Collection → Data Processing → Data Exploration → Trend + Efficiency Model → Forecasting → Validation → Results
+Data → Model → Validation → Forecasting → Output
+
+## Files and responsibilities
+
+| File | Responsibility |
+|---|---|
+| `data.jl` | Loads `data.csv` into a DataFrame (`load_data`). |
+| `model.jl` | Fits the forecasting model (trend and seasonal factors) and defines `predict_solar`, the single-month forecast function used by every other file. |
+| `train_test.jl` | Wraps the model so it can be trained on some months and tested on others (`train_model`, `predict_model`, `forecast_model`, `forecast_model_no_temperature`). |
+| `validation.jl` | Model-independent validation tools: hold-out split, rolling backtest, error metrics and benchmark forecasters. |
+| `temperature_scenarios.jl` | Builds future monthly temperatures from the historical monthly average plus a warming value. |
+| `forecasting.jl` | Applies a prediction function to a list of future months (`generate_forecast`). |
+| `forecast_output.jl` | Organises forecasts into a results table (`create_forecast_output`). |
+| `Project4.jl` | The package module; includes the files above and exports their functions. |
+
+The `scripts/` folder holds the runnable steps: downloading the data (`collect_solar_ree.jl`, `collect_sunlight_aemet.jl`, `temperature.jl`), updating `data.csv` (`update_data_csv.jl`), running the validation and the forecast (`run_validation.jl`, `run_forecast.jl`) and making the charts (`plot_validation.jl`, `plot_results.jl`). Data files are written to `data/`, all other outputs to `results/`. See the README for how to run them.
 
 ## Data
 
-The project requires monthly data for Spain, including:
+The model uses one row per month with these columns:
 
-* Solar electricity production.
-* Sunlight hours.
-* Average temperature.
+* `year`, `month`: the calendar month
+* `solar_gwh`: solar electricity production in GWh
+* `avg_temperature_c`: monthly mean temperature in °C
+* `sunlight_hours`: monthly sunshine hours (not used by the model; used to analyse the forecast errors)
 
-Solar production data will come from a public electricity data source such as **EMBER-ENERGY** or **ENTSO-E**. Temperature and sunlight data will come from **AEMET** or another suitable public meteorological source.
+Months with a missing value in any of these columns are removed before the model is fitted.
 
-The data will be stored in a structured format so that it can be loaded and processed easily in Julia.
+## Model (`model.jl`)
 
-## Data Processing
+Each monthly forecast is the product of three components:
 
-The data processing component prepares the collected data for analysis.
+```
+forecast = trend(time) × seasonal factor(month) × temperature efficiency(temperature)
+```
 
-It is responsible for:
+**Time index.** Year and month are combined into one continuous variable: years since January 2021 (January 2021 = 0, February 2021 = 1/12, January 2022 = 1).
 
-* Loading the data into Julia.
-* Making sure the dates are in the correct format.
-* Combining the different datasets by month.
-* Checking for missing values.
-* Checking for unusual or invalid values.
-* Preparing the final dataset for modelling.
+**1. Trend.** A straight line fitted by ordinary least squares (`estimate_trend`). It is described by an intercept and a slope. The slope is how much each month's production increases per year, mainly because new capacity is installed.
 
-The result is a clean dataset containing the variables needed by the forecasting model.
+**2. Seasonal factors.** For every historical month, actual production is divided by (trend × temperature efficiency). These ratios are averaged for each calendar month, giving 12 factors, which are then scaled so they average exactly 1 (`estimate_seasonality`). Factors above 1 mark strong months (summer) and factors below 1 mark weak months (winter). Because they average 1, they shift production between months without changing the yearly level, which is set by the trend.
 
-## Data Exploration
+**3. Temperature efficiency.** A fixed rule (`temperature_efficiency`):
 
-The data exploration component is used to understand the historical data before building the forecast.
+| Monthly mean temperature | Efficiency factor |
+|---|---|
+| ≤ 25 °C | 1.000 |
+| 27.5 °C | 0.990 |
+| 30 °C | 0.980 |
 
-It will include plots and simple calculations to investigate:
+The factor is 1.0 up to 25 °C (`REF_TEMP`) and falls by 0.4 % per degree above it (`TEMP_COEF = -0.004`). The coefficient is an assumption based on typical photovoltaic panel behaviour, not estimated from our data. The temperature effect is removed **before** the seasonal factors are computed, so heat losses are not counted twice.
 
-* How solar production changes over time.
-* The seasonal pattern of solar production.
-* The relationship between sunlight and solar production.
-* How temperature changes over time.
-* Whether there are unusual values or changes in the data.
+**Prediction.** `predict_solar(time, month, temp_c, trend, seasonality)` returns the forecast in GWh for one month.
 
-This step helps us understand the data and identify patterns that should be included in the model.
+The components are multiplied rather than added because the seasonal swing grows with installed capacity: more panels mean higher summer peaks.
 
-## Trend + Efficiency Model
+## Validation (`train_test.jl`, `validation.jl`)
 
-The model has two main parts.
+The model is tested on months it has not seen:
 
-First, a **trend component** estimates how solar production has changed over time. This represents the effect of increasing solar capacity and other long-term changes.
+* **Hold-out test** (`validate`): train on January 2021 – August 2025 (56 months), forecast the last 12 months (September 2025 – August 2026) and compare with the actual values.
+* **Rolling backtest** (`backtest`): repeat this from 7 different cut-off points and average the results. This is more reliable when the history is short.
+* **Benchmarks**: the model is compared (`compare_forecasters`) with two simple methods:
+  * `seasonal_naive`: same month last year
+  * `seasonal_naive_growth`: same month last year × last year's growth
+* **Temperature check**: `forecast_model_no_temperature` runs the same model without the temperature factor, to measure what the temperature component adds.
+* **Error measures** (`evaluate`): MAE, RMSE, MAPE and bias.
 
-Second, an **efficiency component** represents the effect of temperature on solar panel efficiency. Higher temperatures can reduce the efficiency of photovoltaic panels, so the model applies a small efficiency adjustment when temperatures increase.
+During validation, the trend and seasonal factors are fitted on the training months only, so the test months never influence the model.
 
-The model also takes the seasonal pattern into account because solar production varies strongly between months.
+## Forecasting (`temperature_scenarios.jl`, `forecasting.jl`, `forecast_output.jl`)
 
-## Forecasting
+1. `monthly_temperature_baseline` computes the historical average temperature for each calendar month.
+2. `future_temperature_scenario` adds a warming value (0, +1, +2 or +3 °C) to that baseline.
+3. `generate_forecast` calls `predict_solar` for every month from September 2026 to December 2028, using the trend and seasonal factors fitted on all 68 months.
+4. `create_forecast_output` returns a table with year, month, scenario, temperature and forecast (GWh).
 
-The forecasting component uses the model to estimate future solar production.
+The forecast is not built from the last observed value: it reads the fitted trend line at each future month and applies that month's seasonal factor and the scenario's temperature.
 
-The most recent real solar production data is used as the starting point. The model then applies:
+## Component interaction
 
-* The estimated long-term growth trend.
-* The seasonal pattern.
-* The temperature efficiency adjustment.
-* Different future warming scenarios.
+```plantuml
+@startuml
+rectangle "data.jl\n(load data.csv)" as data
+rectangle "model.jl\n(trend, seasonality,\npredict_solar)" as model
+rectangle "train_test.jl" as tt
+rectangle "validation.jl\n(validate, backtest,\nbenchmarks, metrics)" as validation
+rectangle "temperature_scenarios.jl" as scen
+rectangle "forecasting.jl" as forecast
+rectangle "forecast_output.jl" as output
 
-This produces future monthly solar production estimates for Spain.
-
-## Validation
-
-The model will be tested using historical data.
-
-Some of the most recent months will be temporarily removed from the dataset. The model will then forecast those months using only the earlier data.
-
-The predicted values will be compared with the actual production values.
-
-This allows us to measure how accurately the model can reproduce known historical production and identify areas where the model could be improved.
+data --> model
+model --> tt
+tt --> validation
+scen --> forecast
+model --> forecast
+forecast --> output
+@enduml
+```
 
 ## Output
 
-The project will generate:
+* Validation results comparing predicted and actual production, with error metrics for the model and the benchmarks.
+* Monthly solar production forecasts up to 2028, one table per warming scenario.
+* Plots of historical production, seasonal patterns, validation results and forecasts.
 
-* Plots showing historical solar production.
-* Plots showing seasonal patterns and relevant variables.
-* Forecasts of future monthly solar production.
-* Forecasts under different temperature scenarios.
-* Validation results comparing predicted and actual production.
-* Measures of forecast accuracy.
-
-The main output will be visualizations and numerical results that show how Spain's solar production could change in the future.
-
-## Component Interaction
-
-The components interact in the following order:
-
-```plantuml
-@startuml
-actor User
-
-rectangle "Data Collection" as data
-rectangle "Data Processing" as processing
-rectangle "Data Exploration" as exploration
-rectangle "Trend + Efficiency Model" as model
-rectangle "Forecasting" as forecast
-rectangle "Validation" as validation
-rectangle "Results" as results
-
-User --> data
-data --> processing
-processing --> exploration
-exploration --> model
-processing --> model
-model --> forecast
-forecast --> validation
-validation --> results
-forecast --> results
-
-@enduml
-```
-
-The **Data Collection** component provides the raw data to **Data Processing**. The processed data is then used for **Data Exploration** and for building the model.
-
-The **Trend + Efficiency Model** uses the historical data and information learned during data exploration. The resulting model is used by the **Forecasting** component to produce future estimates.
-
-The forecasts are passed to **Validation**, where they are compared with known historical values. Both the forecasts and validation results are then used to produce the final **Results**.
-
-## Project Structure
-
-The project will be implemented in Julia. The main parts of the project will be separated into files or modules based on their responsibilities.
-
-**A** possible structure is:
-
-```plantuml
-@startuml
-folder "src" {
-    file "data.jl" as data
-    file "exploration.jl" as exploration
-    file "model.jl" as model
-    file "forecast.jl" as forecast
-    file "validation.jl" as validation
-}
-
-folder "data" {
-    file "historical data" as historical
-}
-
-folder "docs" {
-    file "index.md" as index
-    file "design.md" as design
-}
-
-historical --> data
-data --> exploration
-data --> model
-exploration --> model
-model --> forecast
-forecast --> validation
-
-index --> design
-@enduml
-```
-
-The exact file structure may change during development, but each component will have a clear responsibility. This makes the project easier to understand, test, and modify.
-
-## Implementation
-
-The project will use Julia for data processing, modelling, forecasting, and visualization.
-
-The implementation will focus on keeping the model simple and understandable. Each major step will be separated so that the data processing, model, forecasting, and validation can be tested independently.
-
-This structure also makes it possible to change one part of the project, such as the temperature effect or forecasting method, without having to rewrite the entire project.
+For the numbers, charts and limitations, see the [Results section of the README](https://github.com/KLU-BADS/project-4-scientific-programming-2026#results).
