@@ -62,7 +62,7 @@ end
 
 """AEMET answers in two steps: first a JSON with a `datos` link, then the data."""
 function aemet_get(path::AbstractString)
-    key = get(ENV, "AEMET_API_KEY", "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJjaGVuZ3Rpbmd6OTAzNkBnbWFpbC5jb20iLCJqdGkiOiJjZmM0YmQ4OC03OWI3LTRjZTYtODI3Zi1mZTgwMjNkNmQ2ZDQiLCJleHAiOjE3OTg4MzEzMjUsImlzcyI6IkFFTUVUIiwiaWF0IjoxNzkwMTkxMzI1LCJ1c2VySWQiOiJjZmM0YmQ4OC03OWI3LTRjZTYtODI3Zi1mZTgwMjNkNmQ2ZDQiLCJyb2xlIjoiIn0.dq4K0qlfKgntDqPe-tcEsyNd004NGUBVqs5AbMtf-R0")
+    key = get(ENV, "AEMET_API_KEY", "")
     isempty(key) && error("Set the AEMET_API_KEY environment variable first (see top of file).")
     meta = fetch_json(AEMET_BASE * path, ["api_key" => key, "Accept" => "application/json"])
     meta.estado == 200 || error("AEMET error $(meta.estado): $(meta.descripcion)")
